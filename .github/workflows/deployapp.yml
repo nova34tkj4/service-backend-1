@@ -29,19 +29,25 @@ jobs:
     - name: Push image to DockerHub
       run: docker push $REGISTRY/${{ env.IMAGE_NAME }}:latest
 
-  deploy-to-vm:
-    needs: build-and-push
-    runs-on: ubuntu-latest
+    - name: Create SSH key file
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
 
-    steps:
-    - name: Deploy over SSH
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.VM_HOST }}
-        username: ${{ secrets.VM_USER }}
-        key: ${{ secrets.VM_SSH_KEY }}
-        script: |
-          docker pull $REGISTRY/${{ env.IMAGE_NAME }}:latest
-          docker stop $CONTAINER_NAME || true
-          docker rm $CONTAINER_NAME || true
-          docker run -d --name $CONTAINER_NAME -p 4000:4000 $REGISTRY/${{ env.IMAGE_NAME }}:latest
+    - name: SSH Deploy to VM
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+          echo "Logging into DockerHub..."
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+          echo "Pulling latest image..."
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/githuactioncicd-service-backend-1:latest
+
+          echo "Stopping & removing old container..."
+          docker stop service-backend-1 || true
+          docker rm service-backend-1 || true
+
+          echo "Running new container..."
+          docker run -d --name service-backend-1 -p 4000:4000 ${{ secrets.DOCKERHUB_USERNAME }}/githuactioncicd-service-backend-1:latest
+        EOF
