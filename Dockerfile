@@ -9,6 +9,4 @@ RUN go build -o myapp main.go
 EXPOSE 4000
 
 CMD ["./myapp"]
-#perubahan dari developer2
-#perubahan dari developer1
-#halooo
+# ini tambahan fitur
