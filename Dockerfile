@@ -9,5 +9,3 @@ RUN go build -o myapp main.go
 EXPOSE 4000
 
 CMD ["./myapp"]
-# ini tambahan fitur
-#from local
