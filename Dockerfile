@@ -10,4 +10,4 @@ EXPOSE 4000
 
 CMD ["./myapp"]
 # ini tambahan fitur
-#from remote
+#from local
